@@ -56,7 +56,7 @@ statics:
         })
         console.log("Result of searchXkcd is " + JSON.stringify(result));
         //var entries = _.take(result.query.search, 1)
-        return result.src;
+        return result.img;
         }
       // ending the async stuff
 
