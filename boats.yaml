@@ -56,8 +56,8 @@ statics:
             R.img
               src:@props.data.data.img
               style:
-                maxWidth: 200
-                maxHeight: 200
+                maxWidth: 270
+                maxHeight: 500
     frontend: true
   - name: bbb_Boat.scss
     mime: text/x-scss
