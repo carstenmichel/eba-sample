@@ -28,7 +28,7 @@ actions:
   - name: 'bbb:showSingleBoat'
     signature: 'bbb:Boat (data :UserString) -> data bbb:Boat'
     kind: 'nodejs:10'
-    code: "const eba = require(\"eba\");\nconst boats = require('./boats.js');\nconst _ = require('lodash');\n\nmodule.exports.main = async function(params) {\n\tlet p = new eba.Params(params)\n\tlet boatname = await p.get(\":UserString\");\n\t\n\tlet boatInformation = await boats.searchXkcd(boatname);\n\t//return new eba.Result().setData(\"bbb:Boat\", boatInformation)\n\treturn new eba.Result()\n          .setData('bbb:Boat', {\n            name: 'bbb:Boat',\n            data: boatInformation\n            \n          })\n}"
+    code: "const eba = require(\"eba\");\nconst boats = require('./boats.js');\nconst _ = require('lodash');\n\nmodule.exports.main = async function(params) {\n\tlet p = new eba.Params(params)\n\tlet boatname = await p.get(\":UserString\");\n\tconsole.log(\"search for: \" + boatname);\n\t\n\tlet boatInformation = await boats.searchXkcd(boatname);\n\t\n\tconsole.log(\"Result of searchXkcd is \" + JSON.stringify(boatInformation));\n\tconsole.log(\"Title is \" + boatInformation.title);\n\tconsole.log(\"Link to image is \" + boatInformation.img);\n\treturn new eba.Result()\n          .setData('bbb:Boat', {\n            name: 'bbb:Boat',\n            data: boatInformation,\n            text: \"boatInformation\"\n          })\n}"
   - name: 'bbb:showBoats'
     signature: 'bbb:Boats -> data bbb:Boats'
     kind: 'nodejs:10'
@@ -44,17 +44,20 @@ statics:
     mime: application/vnd.coffeescript
     text: |
       class bbb_BoatData extends PureComponent
+        constructor: (props) ->
+            super props
+            @state = expanded:false
+        
         render: ->
-          console.log("From Coffescript: " + @props.data)
+          console.log(@props)
           R.div className:"drumherum",
-            R.h1 null, "Halloechen",
-            R.div className:"bild",
-              R.h2 @props.safe_title
-              R.img
-                src:@props.img
-                style:
-                  maxWidth: 200
-                  maxHeight: 200
+            R.h1 null, "XKCD",
+            R.h2 null, @props.data.data.safe_title
+            R.img
+              src:@props.data.data.img
+              style:
+                maxWidth: 200
+                maxHeight: 200
     frontend: true
   - name: bbb_Boat.scss
     mime: text/x-scss
@@ -66,7 +69,12 @@ statics:
 
 
       .drumherum {
-        background-color: #f8f9fa;
+        background-color: #fff875;
+      }
+
+
+      $drumherum {
+        background-color: #fff875;
       }
     frontend: true
   - name: boats.js
@@ -79,13 +87,14 @@ statics:
 
       // now the promise async stuff
       module.exports.searchXkcd = async (number) => {
+        console.log("Starting Async job to load something");
         let result = await requestpromise.get({
           url: `https://xkcd.com/${number}/info.0.json`,
           json: true
         })
-        console.log("Result of searchXkcd is " + JSON.stringify(result));
+        console.log("Result of searchXkcd is found");
         //var entries = _.take(result.query.search, 1)
-        return result.img;
+        return result;
         }
       // ending the async stuff
 
