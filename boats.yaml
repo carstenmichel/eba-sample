@@ -1,1 +1,82 @@
-#test
+version: 6
+meta:
+  name: Boats
+settings:
+  - name: settings-key
+    value: settings-value
+    notes: just a simple setting
+secrets:
+  - name: secret-key
+    notes: something hidden
+concepts:
+  - name: ':UserString'
+  - name: ':All'
+  - name: ':ActionShow'
+  - name: 'bbb:Boats'
+    ontology:
+      subClassOf: ':Showable'
+      isListOf: 'bbb:Boat'
+  - name: ':Attribute'
+  - name: ':Showable'
+  - name: 'bbb:Boat'
+    ontology:
+      subClassOf:
+        - ':Showable'
+        - ':Attribute'
+patterns: "<!--\n\tEnter your NL patterns in this markdown panel. \n\tA pattern consists of natural language text annotated with concepts tags. \n\tFor example,\n\t 'tell me a [joke](demo:Joke)' annotates the demo:Joke concept appropriately\n\t 'show me the [weather](demo:Weather)' annotates the demo:Weather concept appropriately. \n\tWe even support regular expression annotations.\n\t For example, '[`REGEX [0-9]{5}`](demo:ZIPCode)' provides a zip code annotation.\n-->\nshow me all [boats](bbb:Boats)\nshow me the [boat](bbb:Boat) with id \"___\""
+actions:
+  - name: 'bbb:showSingleBoat'
+    signature: 'bbb:Boat (data :UserString) -> data bbb:Boat'
+    kind: 'nodejs:10'
+    code: "const eba = require(\"eba\");\nconst {getBoatDetail} = require('./boats.js');\nconst _ = require('lodash');\n\nmodule.exports.main = async function(params) {\n\tlet p = new eba.Params(params)\n\tlet boatname = await p.get(\":UserString\");\n\t\n\tconst boatInformation = getBoatDetail(boatname);\n\treturn new eba.Result().setData(\"bbb:Boat\", boatInformation)\n}"
+  - name: 'bbb:showBoats'
+    signature: 'bbb:Boats -> data bbb:Boats'
+    kind: 'nodejs:10'
+    code: |-
+      const eba = require("eba")
+      module.exports.main = function(params) {
+        console.log(JSON.stringify(params));
+        let result = new eba.Result().setData("bbb:Boats", "list of boats")
+        return result
+      }
+statics:
+  - name: boats.js
+    mime: text/javascript
+    text: |-
+      const rp = require('request-promise-native');
+      const _ = require('lodash');
+
+      module.exports.getBoatDetail = function(boatname) {
+        console.log("Start the Boat Detail lookup");
+        if (boatname.length <= 3) return boatname;
+        
+        if (isThisANumber(boatname)) {
+          //Wooha! Perhaps we try something different
+          //return "Hey! \"" + boatname + "\" is a number!!";
+          console.log("boat is a number");
+          return getXKCD(boatname);
+        }
+
+        return "Looking up information for \"" + boatname + "\" the next time";
+      };
+
+      // try to see if this is a number
+      function isThisANumber(possibleNumber) {
+        return !isNaN(parseFloat(possibleNumber)) 
+                && isFinite(possibleNumber);
+      }
+
+      function getXKCD(numberOfXKCD){
+        let theUri = `https://xkcd.com/${numberOfXKCD}/info.0.json`
+        console.log("send query to " + theUri);
+        rp.get({
+          uri: theUri,
+          json: true
+        }).then(comic => {
+          console.log("received something from the server");
+          const src =  comic.src;
+          return (src);
+        })
+        
+      }
+    backend: true
