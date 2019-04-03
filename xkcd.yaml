@@ -1,0 +1,104 @@
+version: 6
+meta:
+  name: Boats
+settings:
+  - name: settings-key
+    value: settings-value
+    notes: just a simple setting
+secrets:
+  - name: secret-key
+    notes: something hidden
+concepts:
+  - name: ':UserString'
+  - name: ':All'
+  - name: ':ActionShow'
+  - name: 'bbb:Boats'
+    ontology:
+      subClassOf: ':Showable'
+      isListOf: 'bbb:Boat'
+  - name: ':Attribute'
+  - name: ':Showable'
+  - name: 'bbb:Boat'
+    ontology:
+      subClassOf:
+        - ':Showable'
+        - ':Attribute'
+patterns: "<!--\n\tEnter your NL patterns in this markdown panel. \n\tA pattern consists of natural language text annotated with concepts tags. \n\tFor example,\n\t 'tell me a [joke](demo:Joke)' annotates the demo:Joke concept appropriately\n\t 'show me the [weather](demo:Weather)' annotates the demo:Weather concept appropriately. \n\tWe even support regular expression annotations.\n\t For example, '[`REGEX [0-9]{5}`](demo:ZIPCode)' provides a zip code annotation.\n-->\nshow me all [boats](bbb:Boats)\nshow me the [boat](bbb:Boat) with id \"___\""
+actions:
+  - name: 'bbb:showSingleBoat'
+    signature: 'bbb:Boat (data :UserString) -> data bbb:Boat'
+    kind: 'nodejs:10'
+    code: "const eba = require(\"eba\");\nconst boats = require('./boats.js');\nconst _ = require('lodash');\n\nmodule.exports.main = async function(params) {\n\tlet p = new eba.Params(params)\n\tlet boatname = await p.get(\":UserString\");\n\tconsole.log(\"search for: \" + boatname);\n\t\n\tlet boatInformation = await boats.searchXkcd(boatname);\n\t\n\tconsole.log(\"Result of searchXkcd is \" + JSON.stringify(boatInformation));\n\tconsole.log(\"Title is \" + boatInformation.title);\n\tconsole.log(\"Link to image is \" + boatInformation.img);\n\treturn new eba.Result()\n          .setData('bbb:Boat', {\n            name: 'bbb:Boat',\n            data: boatInformation,\n            text: \"boatInformation\"\n          })\n}"
+  - name: 'bbb:showBoats'
+    signature: 'bbb:Boats -> data bbb:Boats'
+    kind: 'nodejs:10'
+    code: |-
+      const eba = require("eba")
+      module.exports.main = function(params) {
+        console.log(JSON.stringify(params));
+        let result = new eba.Result().setData("bbb:Boats", "list of boats")
+        return result
+      }
+statics:
+  - name: bbb_boat.coffee
+    mime: application/vnd.coffeescript
+    text: |
+      class bbb_BoatData extends PureComponent
+        constructor: (props) ->
+            super props
+            @state = expanded:false
+        
+        render: ->
+          console.log(@props)
+          R.div className:"drumherum",
+            R.h1 null, "XKCD",
+            R.h2 null, @props.data.data.safe_title
+            R.img
+              src:@props.data.data.img
+              style:
+                maxWidth: 270
+                maxHeight: 500
+    frontend: true
+  - name: bbb_Boat.scss
+    mime: text/x-scss
+    text: >-
+      $font-family-1: "Helvetica Neue for IBM", Helvetica, Arial, sans-serif;
+
+      $font-family-2: "Helvetica Neue Roman for IBM", Helvetica,
+      Arial,sans-serif;
+
+
+      .drumherum {
+        background-color: #fff875;
+      }
+
+
+      $drumherum {
+        background-color: #fff875;
+      }
+    frontend: true
+  - name: boats.js
+    mime: text/javascript
+    text: |+
+      const requestpromise = require('request-promise-native');
+      const _ = require('lodash');
+      var async = require('async');
+
+
+      // now the promise async stuff
+      module.exports.searchXkcd = async (number) => {
+        console.log("Starting Async job to load something");
+        let result = await requestpromise.get({
+          url: `https://xkcd.com/${number}/info.0.json`,
+          json: true
+        })
+        console.log("Result of searchXkcd is found");
+        //var entries = _.take(result.query.search, 1)
+        return result;
+        }
+      // ending the async stuff
+
+
+
+
+    backend: true
