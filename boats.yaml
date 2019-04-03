@@ -28,7 +28,7 @@ actions:
   - name: 'bbb:showSingleBoat'
     signature: 'bbb:Boat (data :UserString) -> data bbb:Boat'
     kind: 'nodejs:10'
-    code: "const eba = require(\"eba\");\nconst {getBoatDetail} = require('./boats.js');\nconst _ = require('lodash');\n\nmodule.exports.main = async function(params) {\n\tlet p = new eba.Params(params)\n\tlet boatname = await p.get(\":UserString\");\n\t\n\tconst boatInformation = getBoatDetail(boatname);\n\treturn new eba.Result().setData(\"bbb:Boat\", boatInformation)\n}"
+    code: "const eba = require(\"eba\");\nconst boats = require('./boats.js');\nconst _ = require('lodash');\n\nmodule.exports.main = async function(params) {\n\tlet p = new eba.Params(params)\n\tlet boatname = await p.get(\":UserString\");\n\t\n\tlet boatInformation = await boats.searchXkcd(boatname);\n\treturn new eba.Result().setData(\"bbb:Boat\", boatInformation)\n}"
   - name: 'bbb:showBoats'
     signature: 'bbb:Boats -> data bbb:Boats'
     kind: 'nodejs:10'
@@ -42,41 +42,25 @@ actions:
 statics:
   - name: boats.js
     mime: text/javascript
-    text: |-
-      const rp = require('request-promise-native');
+    text: |+
+      const requestpromise = require('request-promise-native');
       const _ = require('lodash');
+      var async = require('async');
 
-      module.exports.getBoatDetail = function(boatname) {
-        console.log("Start the Boat Detail lookup");
-        if (boatname.length <= 3) return boatname;
-        
-        if (isThisANumber(boatname)) {
-          //Wooha! Perhaps we try something different
-          //return "Hey! \"" + boatname + "\" is a number!!";
-          console.log("boat is a number");
-          return getXKCD(boatname);
-        }
 
-        return "Looking up information for \"" + boatname + "\" the next time";
-      };
-
-      // try to see if this is a number
-      function isThisANumber(possibleNumber) {
-        return !isNaN(parseFloat(possibleNumber)) 
-                && isFinite(possibleNumber);
-      }
-
-      function getXKCD(numberOfXKCD){
-        let theUri = `https://xkcd.com/${numberOfXKCD}/info.0.json`
-        console.log("send query to " + theUri);
-        rp.get({
-          uri: theUri,
+      // now the promise async stuff
+      module.exports.searchXkcd = async (number) => {
+        let result = await requestpromise.get({
+          url: `https://xkcd.com/${number}/info.0.json`,
           json: true
-        }).then(comic => {
-          console.log("received something from the server");
-          const src =  comic.src;
-          return (src);
         })
-        
-      }
+        console.log("Result of searchXkcd is " + JSON.stringify(result));
+        //var entries = _.take(result.query.search, 1)
+        return result.src;
+        }
+      // ending the async stuff
+
+
+
+
     backend: true
