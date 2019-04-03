@@ -28,7 +28,7 @@ actions:
   - name: 'bbb:showSingleBoat'
     signature: 'bbb:Boat (data :UserString) -> data bbb:Boat'
     kind: 'nodejs:10'
-    code: "const eba = require(\"eba\");\nconst boats = require('./boats.js');\nconst _ = require('lodash');\n\nmodule.exports.main = async function(params) {\n\tlet p = new eba.Params(params)\n\tlet boatname = await p.get(\":UserString\");\n\t\n\tlet boatInformation = await boats.searchXkcd(boatname);\n\treturn new eba.Result().setData(\"bbb:Boat\", boatInformation)\n}"
+    code: "const eba = require(\"eba\");\nconst boats = require('./boats.js');\nconst _ = require('lodash');\n\nmodule.exports.main = async function(params) {\n\tlet p = new eba.Params(params)\n\tlet boatname = await p.get(\":UserString\");\n\t\n\tlet boatInformation = await boats.searchXkcd(boatname);\n\t//return new eba.Result().setData(\"bbb:Boat\", boatInformation)\n\treturn new eba.Result()\n          .setData('bbb:Boat', {\n            name: 'bbb:Boat',\n            data: boatInformation\n            \n          })\n}"
   - name: 'bbb:showBoats'
     signature: 'bbb:Boats -> data bbb:Boats'
     kind: 'nodejs:10'
@@ -40,6 +40,35 @@ actions:
         return result
       }
 statics:
+  - name: bbb_boat.coffee
+    mime: application/vnd.coffeescript
+    text: |
+      class bbb_BoatData extends PureComponent
+        render: ->
+          console.log("From Coffescript: " + @props.data)
+          R.div className:"drumherum",
+            R.h1 null, "Halloechen",
+            R.div className:"bild",
+              R.h2 @props.safe_title
+              R.img
+                src:@props.img
+                style:
+                  maxWidth: 200
+                  maxHeight: 200
+    frontend: true
+  - name: bbb_Boat.scss
+    mime: text/x-scss
+    text: >-
+      $font-family-1: "Helvetica Neue for IBM", Helvetica, Arial, sans-serif;
+
+      $font-family-2: "Helvetica Neue Roman for IBM", Helvetica,
+      Arial,sans-serif;
+
+
+      .drumherum {
+        background-color: #f8f9fa;
+      }
+    frontend: true
   - name: boats.js
     mime: text/javascript
     text: |+
