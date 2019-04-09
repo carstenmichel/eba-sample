@@ -1,7 +1,7 @@
 version: 6
 meta:
   name: XKCD
-  description: 'This Agent can lookup XKCDs :-)'
+  description: 'This Agent can lookup XKCDs '
 settings:
   - name: settings-key
     value: settings-value
