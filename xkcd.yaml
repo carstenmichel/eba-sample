@@ -1,7 +1,7 @@
 version: 6
 meta:
   name: XKCD
-  description: 'This Agent can lookup XKCDs '
+  description: 'This fine  Agent can lookup XKCDs '
 settings:
   - name: settings-key
     value: settings-value
@@ -50,9 +50,9 @@ statics:
             @state = expanded:false
         
         render: ->
-          console.log(@props)
-          R.div className:"drumherum",
-            R.h1 null, "XKCD",
+          R.div className: 'drumherum',
+            R.h1 className: 'drumherum', "XKCD"
+            
             R.h2 null, @props.data.data.safe_title
             R.img
               src:@props.data.data.img
@@ -62,7 +62,7 @@ statics:
     frontend: true
   - name: xkd_XKCD.scss
     mime: text/x-scss
-    text: >-
+    text: >+
       $font-family-1: "Helvetica Neue for IBM", Helvetica, Arial, sans-serif;
 
       $font-family-2: "Helvetica Neue Roman for IBM", Helvetica,
@@ -70,13 +70,17 @@ statics:
 
 
       .drumherum {
+        color: blue;
+        background-color: gray;
+      }
+
+
+      h2 {
+        color: black;
         background-color: #fff875;
       }
 
 
-      $drumherum {
-        background-color: #fff875;
-      }
     frontend: true
   - name: XKCDs.js
     mime: text/javascript
