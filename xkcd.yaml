@@ -43,7 +43,7 @@ actions:
 statics:
   - name: xkd_XKCD.coffee
     mime: application/vnd.coffeescript
-    text: |
+    text: |+
       class xkd_XKCDData extends PureComponent
         constructor: (props) ->
             super props
@@ -59,6 +59,26 @@ statics:
               style:
                 maxWidth: 270
                 maxHeight: 500
+
+
+      class xkd_XKCDContent extends PureComponent
+        constructor: (props) ->
+            super props
+            @state = expanded:false
+        
+        render: ->
+          R.div className: 'drumherum',
+            R.h1 className: 'drumherum', "XKCD"
+            
+            R.h2 null, @props.data.data.safe_title
+            
+            R.p null, @props.data.data.alt
+            R.img
+              src:@props.data.data.img
+              style:
+                maxWidth: 800
+                maxHeight: 500
+
     frontend: true
   - name: xkd_XKCD.scss
     mime: text/x-scss
@@ -70,14 +90,17 @@ statics:
 
 
       .drumherum {
-        color: blue;
-        background-color: gray;
-      }
-
-
-      h2 {
         color: black;
-        background-color: #fff875;
+        background-color: white;
+        h2 {
+          color: blue;
+        }
+        p {
+          border: 2px solid black;
+        }
+        img { 
+         border:10px groove gray;
+        }
       }
 
 
