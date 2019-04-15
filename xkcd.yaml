@@ -43,7 +43,7 @@ actions:
 statics:
   - name: xkd_XKCD.coffee
     mime: application/vnd.coffeescript
-    text: |+
+    text: |-
       class xkd_XKCDData extends PureComponent
         constructor: (props) ->
             super props
@@ -60,6 +60,17 @@ statics:
                 maxWidth: 270
                 maxHeight: 500
 
+
+      class xkd_XKCDNode extends PureComponent
+        constructor: (props) ->
+            super props
+            @state = expanded:false
+        
+        render: ->
+          R.div className: 'drumherum',
+            R.h1 className: 'drumherum', "XKCD"
+            R.h2 null, @props.data.data.safe_title  
+            R.p  null, @props.data.data.num
 
       class xkd_XKCDContent extends PureComponent
         constructor: (props) ->
@@ -79,6 +90,7 @@ statics:
                 maxWidth: 800
                 maxHeight: 500
 
+      @props.data.data.safe_title
     frontend: true
   - name: xkd_XKCD.scss
     mime: text/x-scss
