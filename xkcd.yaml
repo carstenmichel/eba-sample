@@ -1,22 +1,19 @@
 version: 6
 meta:
   name: XKCD
-  description: 'This fine  Agent can lookup XKCDs '
-settings:
-  - name: settings-key
-    value: settings-value
-    notes: just a simple setting
-secrets:
-  - name: secret-key
-    notes: something hidden
+  description: |-
+    This fine Agent can lookup XKCDs
+
+    You can ask him a question like
+
+    - show me the XKCD with id "123"
+
+    to retrieve and display the XKCD with the given id
+  icon: 'https://xkcd.com/s/0b7742.png'
 concepts:
   - name: ':UserString'
   - name: ':All'
   - name: ':ActionShow'
-  - name: 'xkd:XKCDs'
-    ontology:
-      subClassOf: ':Showable'
-      isListOf: 'xkd:XKCD'
   - name: ':Attribute'
   - name: ':Showable'
   - name: 'xkd:XKCD'
@@ -30,16 +27,6 @@ actions:
     signature: 'xkd:XKCD (data :UserString) -> data xkd:XKCD'
     kind: 'nodejs:10'
     code: "const eba = require(\"eba\");\nconst XKCDs = require('./XKCDs.js');\nconst _ = require('lodash');\n\nmodule.exports.main = async function(params) {\n\tlet p = new eba.Params(params)\n\tlet XKCDname = await p.get(\":UserString\");\n\tconsole.log(\"search for: \" + XKCDname);\n\t\n\tlet XKCDInformation = await XKCDs.searchXkcd(XKCDname);\n\t\n\tconsole.log(\"Result of searchXkcd is \" + JSON.stringify(XKCDInformation));\n\tconsole.log(\"Title is \" + XKCDInformation.title);\n\tconsole.log(\"Link to image is \" + XKCDInformation.img);\n\treturn new eba.Result()\n          .setData('xkd:XKCD', {\n            name: 'xkd:XKCD',\n            data: XKCDInformation,\n            text: \"XKCDInformation\"\n          })\n}"
-  - name: 'xkd:showXKCDs'
-    signature: 'xkd:XKCDs -> data xkd:XKCDs'
-    kind: 'nodejs:10'
-    code: |-
-      const eba = require("eba")
-      module.exports.main = function(params) {
-        console.log(JSON.stringify(params));
-        let result = new eba.Result().setData("xkd:XKCDs", "list of XKCDs")
-        return result
-      }
 statics:
   - name: xkd_XKCD.coffee
     mime: application/vnd.coffeescript
