@@ -11,6 +11,7 @@ meta:
     to retrieve and display the XKCD with the given id
   icon: 'https://xkcd.com/s/0b7742.png'
 concepts:
+  - name: 'xkd:TheDiscoveredID'
   - name: ':UserString'
   - name: ':All'
   - name: ':ActionShow'
@@ -22,9 +23,13 @@ concepts:
         - ':Showable'
         - ':Attribute'
   - name: 'xkd:XKCDs'
-patterns: "<!--\n\tEnter your NL patterns in this markdown panel. \n\tA pattern consists of natural language text annotated with concepts tags. \n\tFor example,\n\t 'tell me a [joke](demo:Joke)' annotates the demo:Joke concept appropriately\n\t 'show me the [weather](demo:Weather)' annotates the demo:Weather concept appropriately. \n\tWe even support regular expression annotations.\n\t For example, '[`REGEX [0-9]{5}`](demo:ZIPCode)' provides a zip code annotation.\n-->\nshow me all [XKCDs](xkd:XKCDs)\nshow me the [XKCD](xkd:XKCD) with id \"___\""
+patterns: "<!--\n\tEnter your NL patterns in this markdown panel. \n\tA pattern consists of natural language text annotated with concepts tags. \n\tFor example,\n\t 'tell me a [joke](demo:Joke)' annotates the demo:Joke concept appropriately\n\t 'show me the [weather](demo:Weather)' annotates the demo:Weather concept appropriately. \n\tWe even support regular expression annotations.\n\t For example, '[`REGEX [0-9]{5}`](demo:ZIPCode)' provides a zip code annotation.\n-->\nshow me all [XKCDs](xkd:XKCDs)\nshow me the [XKCD](xkd:XKCD) with id \"___\"\nshow me the [XKCD](xkd:XKCD) 123"
 ontobot: ''
 actions:
+  - name: 'xkd:showSomething'
+    signature: 'xkd:XKCD (xkd:TheDiscoveredID) -> data xkd:XKCD'
+    kind: 'nodejs:10'
+    code: "const eba = require(\"eba\");\nconst XKCDs = require('./XKCDs.js');\nconst _ = require('lodash');\n\nmodule.exports.main = async function(params) {\n\tlet p = new eba.Params(params)\n//\tconsole.log(\"params are: \")\n//\tconsole.log(p.input);\n\tconst input= p.input;\n\tlet XKCDname = input[\"xkd:TheDiscoveredID\"];\n\tconsole.log(\"search for: \")\n\t//console.log(XKCDname[\"data\"]);\n\t\n\tconst theID = XKCDname[\"data\"][1][\"theXkcd\"];\n\t\n\tconsole.log(theID)\n\t\n\tlet XKCDInformation = await XKCDs.searchXkcd(theID);\n\t\n\tconsole.log(\"Result of searchXkcd is \" + JSON.stringify(XKCDInformation));\n\tconsole.log(\"Title is \" + XKCDInformation.title);\n\tconsole.log(\"Link to image is \" + XKCDInformation.img);\n\treturn new eba.Result()\n          .setData('xkd:XKCD', {\n            name: 'xkd:XKCD',\n            data: XKCDInformation,\n            text: \"XKCDInformation\"\n          })\n}"
   - name: 'xkd:showSingleXKCD'
     signature: 'xkd:XKCD (data :UserString) -> data xkd:XKCD'
     kind: 'nodejs:10'
@@ -37,9 +42,6 @@ endpoints:
       const _ = require('lodash')
       const db = require('./imaginaryProductDatabase')
 
-      function jsonToMap(jsonStr) {
-        return new Map(JSON.parse(jsonStr));
-      }
 
 
       module.exports.main = async (params) => {
@@ -73,24 +75,22 @@ endpoints:
           console.log("Now we look at token: " , tt.token.form);
           
           if (littledb.has(tt.token.form)) {
-            console.log("Ha! Token ", tt.token.form, " does exist in our DB")
+            console.log("Ha! Token ", tt.token.form, " does exist in our DB");
+            const metaValue = littledb.get(tt.token.form);
+            console.log("DB value is: ", metaValue)
+            
+            tt = eba.insertAnnotation(tt, 'xkd:TheDiscoveredID', 1.0, [{meta: metaValue}, {theXkcd: tt.token.form}])
+            
+           //const text = "XXXXXX"
+           //const data = { code: 666, text: text}
+           //tt = eba.insertAnnotation(tt, "xkd:XKCD", 1.0, data)
           }
-          /*
-          // see how many named entities a given token matches
-          const matches = _.filter(namedEntities, ({start, end}) => {
-            return start <= tt.token.start && tt.token.start < end
-          })
           
-          // insert annotations for each match
-          _.forEach(matches, (namedEntity) => {
-            tt = eba.insertAnnotation(tt, namedEntity.name, 1.0, namedEntity.meta)
-          })
-        */
-          // return the mutatated token
           return tt
         })
-        
-        
+        console.log("The addedAnnotation looks like this:")
+        console.log(addedAnnotation[1][1])
+
         // return the annotation tree as Result
         return new eba.Result(addedAnnotation)
       }
