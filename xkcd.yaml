@@ -21,13 +21,99 @@ concepts:
       subClassOf:
         - ':Showable'
         - ':Attribute'
+  - name: 'xkd:XKCDs'
 patterns: "<!--\n\tEnter your NL patterns in this markdown panel. \n\tA pattern consists of natural language text annotated with concepts tags. \n\tFor example,\n\t 'tell me a [joke](demo:Joke)' annotates the demo:Joke concept appropriately\n\t 'show me the [weather](demo:Weather)' annotates the demo:Weather concept appropriately. \n\tWe even support regular expression annotations.\n\t For example, '[`REGEX [0-9]{5}`](demo:ZIPCode)' provides a zip code annotation.\n-->\nshow me all [XKCDs](xkd:XKCDs)\nshow me the [XKCD](xkd:XKCD) with id \"___\""
+ontobot: ''
 actions:
   - name: 'xkd:showSingleXKCD'
     signature: 'xkd:XKCD (data :UserString) -> data xkd:XKCD'
     kind: 'nodejs:10'
     code: "const eba = require(\"eba\");\nconst XKCDs = require('./XKCDs.js');\nconst _ = require('lodash');\n\nmodule.exports.main = async function(params) {\n\tlet p = new eba.Params(params)\n\tlet XKCDname = await p.get(\":UserString\");\n\tconsole.log(\"search for: \" + XKCDname);\n\t\n\tlet XKCDInformation = await XKCDs.searchXkcd(XKCDname);\n\t\n\tconsole.log(\"Result of searchXkcd is \" + JSON.stringify(XKCDInformation));\n\tconsole.log(\"Title is \" + XKCDInformation.title);\n\tconsole.log(\"Link to image is \" + XKCDInformation.img);\n\treturn new eba.Result()\n          .setData('xkd:XKCD', {\n            name: 'xkd:XKCD',\n            data: XKCDInformation,\n            text: \"XKCDInformation\"\n          })\n}"
+endpoints:
+  - name: '@annotate'
+    kind: 'nodejs:10'
+    code: |-
+      const eba = require('eba')
+      const _ = require('lodash')
+      const db = require('./imaginaryProductDatabase')
+
+      function jsonToMap(jsonStr) {
+        return new Map(JSON.parse(jsonStr));
+      }
+
+
+      module.exports.main = async (params) => {
+        /*
+         * This Annotate endpoint will be simulating a database request
+         * Instead of looking for a real db we will use the hardcoded JSON Map
+         * that you can finc in the asset section
+         */
+        console.log("This is the @annotate endpoint");
+        
+        // gets the question that was typed in
+        const question = params.input.text
+        
+        console.log("Question asked is: ", question)
+        
+        // Now load our little DB
+        const littledb = db.database; 
+        
+        
+        console.log("DB content: ", littledb);
+        
+        
+        let [rootLabel, subForest] = params.input.tokens
+        
+        //console.log("Root Label is: ", rootLabel)
+        //console.log("Sub Forest is: ", subForest)
+       
+        // insert annotation based on named entities
+        const addedAnnotation = eba.mapTree(params.input.tokens, (tt) => {
+          
+          console.log("Now we look at token: " , tt.token.form);
+          
+          if (littledb.has(tt.token.form)) {
+            console.log("Ha! Token ", tt.token.form, " does exist in our DB")
+          }
+          /*
+          // see how many named entities a given token matches
+          const matches = _.filter(namedEntities, ({start, end}) => {
+            return start <= tt.token.start && tt.token.start < end
+          })
+          
+          // insert annotations for each match
+          _.forEach(matches, (namedEntity) => {
+            tt = eba.insertAnnotation(tt, namedEntity.name, 1.0, namedEntity.meta)
+          })
+        */
+          // return the mutatated token
+          return tt
+        })
+        
+        
+        // return the annotation tree as Result
+        return new eba.Result(addedAnnotation)
+      }
+  - name: '@start'
+    kind: 'nodejs:10'
+    code: |
+      const eba = require('eba');
+      module.exports.main = async (params) => {
+        console.log("This is the @start endpoint");
+        
+        return new eba.Result();
+        }
+      // ending the async stuff
 statics:
+  - name: imaginaryProductDatabase.js
+    mime: text/javascript
+    text: |-
+      module.exports.database = new Map([
+        ["123", "Centrifugal Force"],
+        ["333", "OOH"],
+        ["444", "MacGyver"],
+      ])
+    backend: true
   - name: xkd_XKCD.coffee
     mime: application/vnd.coffeescript
     text: |-
@@ -129,3 +215,5 @@ statics:
 
 
     backend: true
+experience: >-
+  eyJjb250ZW50SWQiOiJjMzMwZmQ0YmNhNDdiMGExOTBmMjBiNDYzMDZkNTE4NjFjNjdmMjU1IiwiZmVlZGJhY2siOnt9LCJsYXN0VXBkYXRlZCI6MTU3MDYzMjYzMi42MDg2OTg0LCJwYXR0ZXJucyI6W10sInJld3JpdGVSdWxlcyI6W10sInNwZWxsaW5nTWFwIjp7InhrZDpYS0NEIjpbWyJ4a2NkIiwxXV19LCJ2ZXJzaW9uIjoiMS4xLjAiLCJyZXBvcnRzIjpbXX0=
