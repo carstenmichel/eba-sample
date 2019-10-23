@@ -11,6 +11,25 @@ meta:
     to retrieve and display the XKCD with the given id
   icon: 'https://xkcd.com/s/0b7742.png'
 concepts:
+  - name: 'xkd:Containers'
+    ontology:
+      subClassOf:
+        - ':Showable'
+        - ':Attribute'
+      isListOf: 'xkd:Container'
+      isSpellAs: containers|*
+  - name: 'xkd:Container'
+    ontology:
+      subClassOf:
+        - ':Showable'
+        - ':Attribute'
+      isSpellAs: container
+  - name: 'xkd:Vessel'
+    ontology:
+      subClassOf:
+        - ':Showable'
+        - ':Attribute'
+      isSpellAs: vessel
   - name: 'xkd:TheDiscoveredID'
   - name: ':UserString'
   - name: ':All'
@@ -23,13 +42,23 @@ concepts:
         - ':Showable'
         - ':Attribute'
   - name: 'xkd:XKCDs'
-patterns: "<!--\n\tEnter your NL patterns in this markdown panel. \n\tA pattern consists of natural language text annotated with concepts tags. \n\tFor example,\n\t 'tell me a [joke](demo:Joke)' annotates the demo:Joke concept appropriately\n\t 'show me the [weather](demo:Weather)' annotates the demo:Weather concept appropriately. \n\tWe even support regular expression annotations.\n\t For example, '[`REGEX [0-9]{5}`](demo:ZIPCode)' provides a zip code annotation.\n-->\nshow me all [XKCDs](xkd:XKCDs)\nshow me the [XKCD](xkd:XKCD) with id \"___\"\nshow me the [XKCD](xkd:XKCD) [123](xkd:TheDiscoveredID)"
+  - name: ':StrAttribute'
+  - name: ':WithName'
+patterns: "<!--\n\tEnter your NL patterns in this markdown panel. \n\tA pattern consists of natural language text annotated with concepts tags. \n\tFor example,\n\t 'tell me a [joke](demo:Joke)' annotates the demo:Joke concept appropriately\n\t 'show me the [weather](demo:Weather)' annotates the demo:Weather concept appropriately. \n\tWe even support regular expression annotations.\n\t For example, '[`REGEX [0-9]{5}`](demo:ZIPCode)' provides a zip code annotation.\n-->\nshow me all [XKCDs](xkd:XKCDs)\nshow me the [XKCD](xkd:XKCD) with id \"___\"\nshow me the [XKCD](xkd:XKCD) [123](xkd:TheDiscoveredID)\n\nshow me [containers](xkd:Containers) on the [vessel](xkd:Vessel) \"___\"\nshow [vessel](xkd:Vessel) with name \"___\""
 ontobot: ''
 actions:
+  - name: 'xkd:identifyVessel'
+    signature: 'xkd:Vessel (:WithName (data :UserString)) -> data xkd:Vessel'
+    kind: 'nodejs:10'
+    code: "const eba = require(\"eba\");\nconst _ = require('lodash');\n\nmodule.exports.main = async function(params) {\n\tconst p = new eba.Params(params);\n\tlet vesselName = await p.get(\":UserString\");\n\treturn new eba.Result().setData('xkd:Vessel', {text: vesselName});\n}"
+  - name: 'xkd:showContainers'
+    signature: 'xkd:Containers (data xkd:Vessel) -> data xkd:Containers'
+    kind: 'nodejs:10'
+    code: "const eba = require(\"eba\");\n\nconst _ = require('lodash');\n\nmodule.exports.main = async function(params) {\n\tconst p = new eba.Params(params);\n\tconst vesselName = await p.get(\"xkd:Vessel\");\n\tlet returnString = \"I have no clue about vessel \" + vesselName.text + \" ;-)\";\n  return new eba.Result().setData('xkd:Containers', returnString);\n}"
   - name: 'xkd:showSomething'
     signature: 'xkd:XKCD (xkd:TheDiscoveredID) -> data xkd:XKCD'
     kind: 'nodejs:10'
-    code: "const eba = require(\"eba\");\nconst XKCDs = require('./XKCDs.js');\nconst _ = require('lodash');\n\nmodule.exports.main = async function(params) {\n\tconst p = new eba.Params(params);\n\n  const discoveredID = await p.get('xkd:TheDiscoveredID');\n  console.log(\"Discovered with await\");\n  console.log(discoveredID);\n  const discoveredXkcdID = _.get(discoveredID, 'theXkcd');\n  console.log(\"Annotated ID:\" , discoveredXkcdID);\n\t\n\tlet XKCDInformation = await XKCDs.searchXkcd(discoveredXkcdID);\n\t\n\tconsole.log(\"Result of searchXkcd is \" + JSON.stringify(XKCDInformation));\n\tconsole.log(\"Title is \" + XKCDInformation.title);\n\tconsole.log(\"Link to image is \" + XKCDInformation.img);\n\treturn new eba.Result()\n          .setData('xkd:XKCD', {\n            name: 'xkd:XKCD',\n            data: XKCDInformation,\n            text: \"XKCDInformation\"\n          })\n}"
+    code: "const eba = require(\"eba\");\nconst XKCDs = require('./XKCDs.js');\nconst _ = require('lodash');\n\nmodule.exports.main = async function(params) {\n\tconst p = new eba.Params(params);\n\n  const discoveredID = await p.get('xkd:TheDiscoveredID');\n  console.log(\"discoveredID\");\n  console.log(discoveredID);\n  const discoveredXkcdID = _.get(discoveredID, 'theXkcd');\n  \n\tlet XKCDInformation = await XKCDs.searchXkcd(discoveredXkcdID);\n\t\n\treturn new eba.Result()\n    .setData('xkd:XKCD', {\n      name: 'xkd:XKCD',\n      data: XKCDInformation,\n      text: \"XKCDInformation\"\n  })\n}"
   - name: 'xkd:showSingleXKCD'
     signature: 'xkd:XKCD (data :UserString) -> data xkd:XKCD'
     kind: 'nodejs:10'
@@ -50,45 +79,25 @@ endpoints:
          * Instead of looking for a real db we will use the hardcoded JSON Map
          * that you can finc in the asset section
          */
-        console.log("This is the @annotate endpoint");
         
         // gets the question that was typed in
         const question = params.input.text
         
-        console.log("Question asked is: ", question)
-        
-        // Now load our little DB
+         // Now load our little DB
         const littledb = db.database; 
-        
-        
-        console.log("DB content: ", littledb);
-        
-        
-        let [rootLabel, subForest] = params.input.tokens
-        
-        //console.log("Root Label is: ", rootLabel)
-        //console.log("Sub Forest is: ", subForest)
        
-        // insert annotation based on named entities
+        // insert annotation if you find one of the numbers in the database
         const addedAnnotation = eba.mapTree(params.input.tokens, (tt) => {
           
-          console.log("Now we look at token: " , tt.token.form);
-          
           if (littledb.has(tt.token.form)) {
-            console.log("Ha! Token ", tt.token.form, " does exist in our DB");
             const metaValue = littledb.get(tt.token.form);
-            console.log("DB value is: ", metaValue)
-            
             tt = eba.insertAnnotation(tt, 'xkd:TheDiscoveredID', 1.0, {theXkcd: tt.token.form})
           }
           
-          return tt
+          return tt;
         })
-        console.log("The addedAnnotation looks like this:")
-        console.log(addedAnnotation[1][1])
-
-        // return the annotation tree as Result
-        return new eba.Result(addedAnnotation)
+        
+        return new eba.Result(addedAnnotation);
       }
   - name: '@start'
     kind: 'nodejs:10'
