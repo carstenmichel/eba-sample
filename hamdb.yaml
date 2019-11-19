@@ -40,17 +40,19 @@ statics:
             this.callsign = props.data.data.hamdb.callsign.call;
             this.OM = props.data.data.hamdb.callsign.name;
             this.coordinates = props.data.coords.center;
-            console.log("debug stuff:");
-            console.log(this.coordinates);
             this.MH = L.Maidenhead.latLngToIndex( 
               parseFloat(this.coordinates.lat),
               parseFloat(this.coordinates.lng),
-              6)
-            console.log("QTH= " , this.MH);
-        }
+              6);
+            this.boxCoords = L.Maidenhead.indexToBBox(this.MH);
+            this.rectCoords = [[this.boxCoords[0], this.boxCoords[1]],
+                                [this.boxCoords[2],this.boxCoords[3]]];
+            console.log(this.rectCoords);
+      }
 
 
         componentDidMount() {
+          if (this.map != undefined) { this.map.remove(); } 
           this.map =  L.map('map', {
             center: [this.coordinates.lat, this.coordinates.lng],
             zoom: 11,
@@ -61,7 +63,7 @@ statics:
             ]
           });
           L.marker([this.coordinates.lat, this.coordinates.lng]).addTo(this.map)
-          .bindPopup('QTH')
+          .bindPopup(this.callsign)
           .openPopup();
           L.maidenhead({ precision: 6 }).addTo(this.map);
         }
