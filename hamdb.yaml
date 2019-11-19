@@ -1,0 +1,147 @@
+version: 6
+meta:
+  name: HamDB
+  description: |-
+    This Agent allows you to get info about Ham Radio operators
+
+    - show me information about Callsign "DH7YAX"
+
+    to retrieve and display the Callsign Info XKCD
+  icon: ''
+  bundler: webpack
+concepts:
+  - name: ':UserString'
+  - name: ':Attribute'
+  - name: ':Showable'
+  - name: 'hamdb:CallSignInfo'
+    ontology:
+      subClassOf:
+        - ':Showable'
+        - ':Attribute'
+  - name: ':Number'
+patterns: "<!--\n\tEnter your NL patterns in this markdown panel. \n\tA pattern consists of natural language text annotated with concepts tags. \n\tFor example,\n\t 'tell me a [joke](demo:Joke)' annotates the demo:Joke concept appropriately\n\t 'show me the [weather](demo:Weather)' annotates the demo:Weather concept appropriately. \n\tWe even support regular expression annotations.\n\t For example, '[`REGEX [0-9]{5}`](demo:ZIPCode)' provides a zip code annotation.\n-->\n\nshow me information for [Callsign](hamdb:CallSignInfo) \"___\"\n\n\n\n\n\n\n"
+ontobot: ''
+actions:
+  - name: 'hamdb:showCallsignInfo'
+    signature: 'hamdb:CallSignInfo (data :UserString) -> data hamdb:CallSignInfo'
+    kind: 'nodejs:10'
+    code: "const eba = require(\"eba\");\nconst hamdb = require('./hamdb.js');\nconst _ = require('lodash');\n\nmodule.exports.main = async function(params) {\n\tlet p = new eba.Params(params)\n\tlet callsign = await p.get(\":UserString\");\n\tconsole.log(\"search for: \" + callsign);\n\t\n\tlet HamDBInformation = await hamdb.searchHamdb(callsign);\n\tconsole.log(\"Status of call is \" , HamDBInformation.hamdb.messages.status);\n\tconsole.log(\"Result of hamDb search is \" + JSON.stringify(HamDBInformation));\n\tlet myCoords =  {\n    center: {\n      lat: HamDBInformation.hamdb.callsign.lat,\n      lng: HamDBInformation.hamdb.callsign.lon\n    },\n    zoom: 11\n  };\n  let myPosition = [HamDBInformation.hamdb.callsign.lat,\n       HamDBInformation.hamdb.callsign.lon];\n  console.log(\"Coords are \" , myCoords);\n  \n\treturn new eba.Result()\n          .setData('hamdb:CallSignInfo', {\n            data: HamDBInformation,\n            coords:  myCoords,\n            position: myPosition,\n            text: callsign\n          })\n}"
+statics:
+  - name: hamdbUI.jsx
+    mime: text/jsx
+    text: |-
+      import 'leaflet.maidenhead/src/maidenhead.js';
+
+
+      export class hamdb_CallSignInfoData extends React.Component {
+        constructor (props) {
+            super(props);
+            this.state = {};
+            this.callsign = props.data.data.hamdb.callsign.call;
+            this.OM = props.data.data.hamdb.callsign.name;
+            this.coordinates = props.data.coords.center;
+            console.log("debug stuff:");
+            console.log(this.coordinates);
+            this.MH = L.Maidenhead.latLngToIndex( 
+              parseFloat(this.coordinates.lat),
+              parseFloat(this.coordinates.lng),
+              6)
+            console.log("QTH= " , this.MH);
+        }
+
+
+        componentDidMount() {
+          this.map =  L.map('map', {
+            center: [this.coordinates.lat, this.coordinates.lng],
+            zoom: 11,
+            layers: [
+              L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+              }),
+            ]
+          });
+          L.marker([this.coordinates.lat, this.coordinates.lng]).addTo(this.map)
+          .bindPopup('QTH')
+          .openPopup();
+          L.maidenhead({ precision: 6 }).addTo(this.map);
+        }
+
+
+       render() {
+              return (
+                <div className="drumherum">
+                  <h1>hamdb</h1>
+                  <h2>{this.callsign}</h2>
+                  <p>Operator name: {this.OM}</p>
+                  <p>
+                  QTH {this.MH}
+                  </p>
+                  <div id="map">
+                  </div>
+                </div>)
+            }
+      }
+    frontend: true
+  - name: hamdb.scss
+    mime: text/x-scss
+    text: >+
+      $font-family-1: "Helvetica Neue for IBM", Helvetica, Arial, sans-serif;
+
+
+      $font-family-2: "Helvetica Neue Roman for IBM",
+      Helvetica,Arial,sans-serif;
+
+
+
+      .drumherum {
+        color: black;
+        background-color: white;
+        h2 {
+          color: blue;
+        }
+      }
+
+      #map {
+        height: 270px;
+      }
+
+
+
+    frontend: true
+  - name: package.json
+    mime: application/json
+    text: |-
+      {
+        "dependencies": {
+          "leaflet.maidenhead": "^1.0.0"
+        }
+      }
+    frontend: true
+    backend: true
+  - name: hamdb.js
+    mime: text/javascript
+    text: |+
+      const requestpromise = require('request-promise-native');
+      const _ = require('lodash');
+      var async = require('async');
+
+
+      // now the promise async stuff
+      module.exports.searchHamdb = async (callsign) => {
+        console.log("Starting Async job to load something");
+        let result = await requestpromise.get({
+          url: `http://api.hamdb.org/v1/${callsign}/json/eba`,
+          json: true,
+          timeout: 10000
+        })
+        console.log("Result of hamdb is found");
+        return result;
+        }
+      // ending the async stuff
+
+
+
+
+    backend: true
+experience: >-
+  eyJjb250ZW50SWQiOiJjMzMwZmQ0YmNhNDdiMGExOTBmMjBiNDYzMDZkNTE4NjFjNjdmMjU1IiwiZmVlZGJhY2siOnt9LCJsYXN0VXBkYXRlZCI6MTU3MDYzMjYzMi42MDg2OTg0LCJwYXR0ZXJucyI6W10sInJld3JpdGVSdWxlcyI6W10sInNwZWxsaW5nTWFwIjp7InhrZDpYS0NEIjpbWyJ4a2NkIiwxXV19LCJ2ZXJzaW9uIjoiMS4xLjAiLCJyZXBvcnRzIjpbXX0=
