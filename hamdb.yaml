@@ -10,6 +10,12 @@ meta:
   icon: ''
   bundler: webpack
 concepts:
+  - name: 'hamdb:QTH'
+    ontology:
+      subClassOf:
+        - ':Showable'
+        - ':Attribute'
+      isSpellAs: qth
   - name: ':UserString'
   - name: ':Attribute'
   - name: ':Showable'
@@ -18,6 +24,8 @@ concepts:
       subClassOf:
         - ':Showable'
         - ':Attribute'
+    attributes:
+      'hamdb:QTH': coords
   - name: ':Number'
 patterns: "<!--\n\tEnter your NL patterns in this markdown panel. \n\tA pattern consists of natural language text annotated with concepts tags. \n\tFor example,\n\t 'tell me a [joke](demo:Joke)' annotates the demo:Joke concept appropriately\n\t 'show me the [weather](demo:Weather)' annotates the demo:Weather concept appropriately. \n\tWe even support regular expression annotations.\n\t For example, '[`REGEX [0-9]{5}`](demo:ZIPCode)' provides a zip code annotation.\n-->\n\nshow me information for [Callsign](hamdb:CallSignInfo) \"___\"\n\n\n\n\n\n\n"
 ontobot: ''
