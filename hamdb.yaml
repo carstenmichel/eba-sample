@@ -13,9 +13,9 @@ concepts:
   - name: 'hamdb:QTH'
     ontology:
       subClassOf:
-        - ':Showable'
         - ':Attribute'
-      isSpellAs: qth
+        - ':Number'
+      isSpellAs: QTH
   - name: ':UserString'
   - name: ':Attribute'
   - name: ':Showable'
@@ -25,26 +25,28 @@ concepts:
         - ':Showable'
         - ':Attribute'
     attributes:
-      'hamdb:QTH': coords
+      'hamdb:QTH': coords.zoom
+    notes: cs
   - name: ':Number'
-patterns: "<!--\n\tEnter your NL patterns in this markdown panel. \n\tA pattern consists of natural language text annotated with concepts tags. \n\tFor example,\n\t 'tell me a [joke](demo:Joke)' annotates the demo:Joke concept appropriately\n\t 'show me the [weather](demo:Weather)' annotates the demo:Weather concept appropriately. \n\tWe even support regular expression annotations.\n\t For example, '[`REGEX [0-9]{5}`](demo:ZIPCode)' provides a zip code annotation.\n-->\n\nshow me information for [Callsign](hamdb:CallSignInfo) \"___\"\n\n\n\n\n\n\n"
+  - name: ':StrAttribute'
+patterns: "<!--\n\tEnter your NL patterns in this markdown panel. \n\tA pattern consists of natural language text annotated with concepts tags. \n\tFor example,\n\t 'tell me a [joke](demo:Joke)' annotates the demo:Joke concept appropriately\n\t 'show me the [weather](demo:Weather)' annotates the demo:Weather concept appropriately. \n\tWe even support regular expression annotations.\n\t For example, '[`REGEX [0-9]{5}`](demo:ZIPCode)' provides a zip code annotation.\n-->\n\nshow me information for [Callsign](hamdb:CallSignInfo) \"___\"\nshow me the [qth](hamdb:QTH) of this callsign\n\n\n\n\n\n\n"
 ontobot: ''
 actions:
   - name: 'hamdb:showCallsignInfo'
     signature: 'hamdb:CallSignInfo (data :UserString) -> data hamdb:CallSignInfo'
     kind: 'nodejs:10'
-    code: "const eba = require(\"eba\");\nconst hamdb = require('./hamdb.js');\nconst _ = require('lodash');\n\nmodule.exports.main = async function(params) {\n\tlet p = new eba.Params(params)\n\tlet callsign = await p.get(\":UserString\");\n\tconsole.log(\"search for: \" + callsign);\n\t\n\tlet HamDBInformation = await hamdb.searchHamdb(callsign);\n\tconsole.log(\"Status of call is \" , HamDBInformation.hamdb.messages.status);\n\tconsole.log(\"Result of hamDb search is \" + JSON.stringify(HamDBInformation));\n\tlet myCoords =  {\n    center: {\n      lat: HamDBInformation.hamdb.callsign.lat,\n      lng: HamDBInformation.hamdb.callsign.lon\n    },\n    zoom: 11\n  };\n  let myPosition = [HamDBInformation.hamdb.callsign.lat,\n       HamDBInformation.hamdb.callsign.lon];\n  console.log(\"Coords are \" , myCoords);\n  \n\treturn new eba.Result()\n          .setData('hamdb:CallSignInfo', {\n            data: HamDBInformation,\n            coords:  myCoords,\n            position: myPosition,\n            text: callsign\n          })\n}"
+    code: "const eba = require(\"eba\");\nconst hamdb = require('./hamdb.js');\nconst _ = require('lodash');\n\n\nmodule.exports.main = async function(params) {\n\tlet p = new eba.Params(params)\n\tlet callsign = await p.get(\":UserString\");\n\tconsole.log(\"search for: \" + callsign);\n\t\n\tlet HamDBInformation = await hamdb.searchHamdb(callsign);\n\tconsole.log(\"Status of call is \" , HamDBInformation.hamdb.messages.status);\n\tconsole.log(\"Result of hamDb search is \" + JSON.stringify(HamDBInformation));\n\tlet myCoords =  {\n    center: {\n      lat: HamDBInformation.hamdb.callsign.lat,\n      lng: HamDBInformation.hamdb.callsign.lon\n    },\n    zoom: 11\n  };\n  let myPosition = [HamDBInformation.hamdb.callsign.lat,\n       HamDBInformation.hamdb.callsign.lon];\n       \n  \n  console.log(\"Coords are \" , myCoords);\n  \n\treturn new eba.Result()\n          .setData('hamdb:CallSignInfo', {\n            data: HamDBInformation,\n            coords:  myCoords,\n            position: myPosition,\n            text: callsign\n          })\n}"
 statics:
   - name: hamdbUI.jsx
     mime: text/jsx
     text: |-
       import 'leaflet.maidenhead/src/maidenhead.js';
 
-
       export class hamdb_CallSignInfoData extends React.Component {
         constructor (props) {
             super(props);
-            this.state = {};
+            console.log("Constructor of CallsignInfo");
+            this.state = { isMounted : false};
             this.callsign = props.data.data.hamdb.callsign.call;
             this.OM = props.data.data.hamdb.callsign.name;
             this.coordinates = props.data.coords.center;
@@ -55,27 +57,56 @@ statics:
             this.boxCoords = L.Maidenhead.indexToBBox(this.MH);
             this.rectCoords = [[this.boxCoords[0], this.boxCoords[1]],
                                 [this.boxCoords[2],this.boxCoords[3]]];
-            console.log(this.rectCoords);
       }
 
 
         componentDidMount() {
-          if (this.map != undefined) { this.map.remove(); } 
-          this.map =  L.map('map', {
-            center: [this.coordinates.lat, this.coordinates.lng],
-            zoom: 11,
-            layers: [
-              L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
-                attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
-              }),
-            ]
-          });
-          L.marker([this.coordinates.lat, this.coordinates.lng]).addTo(this.map)
-          .bindPopup(this.callsign)
-          .openPopup();
-          L.maidenhead({ precision: 6 }).addTo(this.map);
+          console.log("Enter componentDidMount");
+          if (!this.state.isMounted) {
+              this.setState({isMounted:true});
+              if (this.map != undefined) { 
+                console.log("removing existing map");
+                this.map.off();
+                this.map.remove(); 
+                var container = L.DomUtil.get('map');
+                  if(container != null){
+                    console.log("The map container is already filled with something");
+                    container._leaflet_id = null;
+                  }
+              } 
+              this.map =  L.map('map', {
+                center: [this.coordinates.lat, this.coordinates.lng],
+                zoom: 11,
+                layers: [
+                  L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
+                    attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+                  }),
+                ]
+              });
+              L.marker([this.coordinates.lat, this.coordinates.lng]).addTo(this.map)
+              .bindPopup(this.callsign)
+              .openPopup();
+              L.maidenhead({ precision: 6 }).addTo(this.map);
+          }
         }
 
+        componentWillUnmount() {
+          console.log("Unmounting is about to begin");
+          if (this.map != undefined) { 
+            console.log("removing existing map");
+            this.map.off();
+            this.map.remove(); 
+            /*
+            var container = L.DomUtil.get('map');
+              if(container != null){
+                console.log("The map container is already filled with something");
+                container._leaflet_id = null;
+              }
+              */
+          } 
+          this.setState({isMounted:false});
+          console.log("Unmounting will happen now");
+        }
 
        render() {
               return (
