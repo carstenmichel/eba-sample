@@ -35,92 +35,86 @@ actions:
   - name: 'hamdb:showCallsignInfo'
     signature: 'hamdb:CallSignInfo (data :UserString) -> data hamdb:CallSignInfo'
     kind: 'nodejs:10'
-    code: "const eba = require(\"eba\");\nconst hamdb = require('./hamdb.js');\nconst _ = require('lodash');\n\n\nmodule.exports.main = async function(params) {\n\tlet p = new eba.Params(params)\n\tlet callsign = await p.get(\":UserString\");\n\tconsole.log(\"search for: \" + callsign);\n\t\n\tlet HamDBInformation = await hamdb.searchHamdb(callsign);\n\tconsole.log(\"Status of call is \" , HamDBInformation.hamdb.messages.status);\n\tconsole.log(\"Result of hamDb search is \" + JSON.stringify(HamDBInformation));\n\tlet myCoords =  {\n    center: {\n      lat: HamDBInformation.hamdb.callsign.lat,\n      lng: HamDBInformation.hamdb.callsign.lon\n    },\n    zoom: 11\n  };\n  let myPosition = [HamDBInformation.hamdb.callsign.lat,\n       HamDBInformation.hamdb.callsign.lon];\n       \n  \n  console.log(\"Coords are \" , myCoords);\n  \n\treturn new eba.Result()\n          .setData('hamdb:CallSignInfo', {\n            data: HamDBInformation,\n            coords:  myCoords,\n            position: myPosition,\n            text: callsign\n          })\n}"
+    code: "const eba = require(\"eba\");\nconst hamdb = require('./hamdb.js');\nconst _ = require('lodash');\n\n\nmodule.exports.main = async function(params) {\n\tlet p = new eba.Params(params)\n\tlet callsign = await p.get(\":UserString\");\n\tconsole.log(\"search for: \" + callsign);\n\t\n\tlet HamDBInformation = await hamdb.searchHamdb(callsign);\n\tconsole.log(\"Status of call is \" , HamDBInformation.hamdb.messages.status);\n\tconsole.log(\"Result of hamDb search is \" + JSON.stringify(HamDBInformation));\n\tlet myCoords =  {\n    center: {\n      lat: HamDBInformation.hamdb.callsign.lat,\n      lng: HamDBInformation.hamdb.callsign.lon\n    },\n    zoom: 11\n  };\n  \n\treturn new eba.Result()\n          .setData('hamdb:CallSignInfo', {\n            data: HamDBInformation,\n            coords:  myCoords,\n            text: callsign\n          })\n}"
 statics:
   - name: hamdbUI.jsx
     mime: text/jsx
     text: |-
       import 'leaflet.maidenhead/src/maidenhead.js';
+      import uuidv4 from 'uuid/v4';
 
       export class hamdb_CallSignInfoData extends React.Component {
         constructor (props) {
-            super(props);
-            console.log("Constructor of CallsignInfo");
-            this.state = { isMounted : false};
-            this.callsign = props.data.data.hamdb.callsign.call;
-            this.OM = props.data.data.hamdb.callsign.name;
-            this.coordinates = props.data.coords.center;
-            this.MH = L.Maidenhead.latLngToIndex( 
-              parseFloat(this.coordinates.lat),
-              parseFloat(this.coordinates.lng),
-              6);
-            this.boxCoords = L.Maidenhead.indexToBBox(this.MH);
-            this.rectCoords = [[this.boxCoords[0], this.boxCoords[1]],
-                                [this.boxCoords[2],this.boxCoords[3]]];
-      }
-
-
-        componentDidMount() {
-          console.log("Enter componentDidMount");
-          if (!this.state.isMounted) {
-              this.setState({isMounted:true});
-              if (this.map != undefined) { 
-                console.log("removing existing map");
-                this.map.off();
-                this.map.remove(); 
-                var container = L.DomUtil.get('map');
-                  if(container != null){
-                    console.log("The map container is already filled with something");
-                    container._leaflet_id = null;
-                  }
-              } 
-              this.map =  L.map('map', {
-                center: [this.coordinates.lat, this.coordinates.lng],
-                zoom: 11,
-                layers: [
-                  L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
-                    attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
-                  }),
-                ]
-              });
-              L.marker([this.coordinates.lat, this.coordinates.lng]).addTo(this.map)
-              .bindPopup(this.callsign)
-              .openPopup();
-              L.maidenhead({ precision: 6 }).addTo(this.map);
+          super(props);
+          var randomvalue= uuidv4();
+          console.log("Random value is: " , randomvalue);
+          this.state = { 
+            uniqmap: randomvalue, 
           }
         }
 
-        componentWillUnmount() {
-          console.log("Unmounting is about to begin");
-          if (this.map != undefined) { 
-            console.log("removing existing map");
-            this.map.off();
-            this.map.remove(); 
-            /*
-            var container = L.DomUtil.get('map');
-              if(container != null){
-                console.log("The map container is already filled with something");
-                container._leaflet_id = null;
-              }
-              */
-          } 
-          this.setState({isMounted:false});
-          console.log("Unmounting will happen now");
+        componentWillUnmount(){
+          console.log("Enter componentWillUnmount");
         }
 
-       render() {
-              return (
-                <div className="drumherum">
-                  <h1>hamdb</h1>
-                  <h2>{this.callsign}</h2>
-                  <p>Operator name: {this.OM}</p>
-                  <p>
-                  QTH {this.MH}
-                  </p>
-                  <div id="map">
-                  </div>
-                </div>)
-            }
+        componentDidMount() {
+          console.log("Enter componentDidMount");
+          console.log("componentDidMount: ", this.state.uniqmap);
+          var map =  L.map(this.state.uniqmap, {
+            center: [this.props.data.data.hamdb.callsign.lat, 
+                    this.props.data.data.hamdb.callsign.lon],
+            zoom: 11,
+            layers: [
+              L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+              }),
+              ]
+            });
+          console.log("Map is in container: " , map.getContainer());
+            L.marker([this.props.data.data.hamdb.callsign.lat, 
+                      this.props.data.data.hamdb.callsign.lon])
+            .addTo(map)
+            .bindPopup(this.props.data.data.hamdb.callsign.call)
+            .openPopup();
+        }
+        render() {
+          console.log("render uniq value= " , this.state.uniqmap);
+          return (
+            <div className="drumherum">
+              <h1>HamDB</h1>
+              <OMInformation omData={this.props.data.data.hamdb}></OMInformation>
+              <div id={this.state.uniqmap} style={{height : '270px'}}>
+              </div>
+            </div>)
+        }
+      }
+
+      export class OMInformation extends React.Component {
+        render() {
+          var maidenhead = L.Maidenhead.latLngToIndex( 
+              parseFloat(this.props.omData.callsign.lat),
+              parseFloat(this.props.omData.callsign.lon),
+              6);
+
+          return (
+            <div>
+              <table>
+              <tr>
+                <td>Callsign</td>
+                <td>{this.props.omData.callsign.call}</td>
+              </tr>
+              <tr>
+                <td>Operator name</td>
+                <td>{this.props.omData.callsign.name}</td>
+              </tr>
+              <tr>
+                <td>QTH location</td>
+                <td>{maidenhead}</td>
+              </tr>
+              </table>
+            </div>
+            )
+        }
       }
     frontend: true
   - name: hamdb.scss
@@ -147,6 +141,12 @@ statics:
       }
 
 
+      #myMap {
+        height: 270px;
+      }
+
+
+
 
     frontend: true
   - name: package.json
@@ -154,7 +154,8 @@ statics:
     text: |-
       {
         "dependencies": {
-          "leaflet.maidenhead": "^1.0.0"
+          "leaflet.maidenhead": "^1.0.0",
+          "uuid": "^3.3.3"
         }
       }
     frontend: true
