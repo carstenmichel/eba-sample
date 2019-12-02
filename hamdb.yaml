@@ -10,6 +10,12 @@ meta:
   icon: ''
   bundler: webpack
 concepts:
+  - name: 'hamdb:Grid'
+    ontology:
+      isSpellAs: grid
+      subClassOf:
+        - ':Attribute'
+        - ':StrAttribute'
   - name: 'hamdb:QTH'
     ontology:
       subClassOf:
@@ -25,17 +31,24 @@ concepts:
         - ':Showable'
         - ':Attribute'
     attributes:
+      'hamdb:Operator': operator
+      'hamdb:Grid': grid
       'hamdb:QTH': coords.zoom
     notes: cs
   - name: ':Number'
   - name: ':StrAttribute'
-patterns: "<!--\n\tEnter your NL patterns in this markdown panel. \n\tA pattern consists of natural language text annotated with concepts tags. \n\tFor example,\n\t 'tell me a [joke](demo:Joke)' annotates the demo:Joke concept appropriately\n\t 'show me the [weather](demo:Weather)' annotates the demo:Weather concept appropriately. \n\tWe even support regular expression annotations.\n\t For example, '[`REGEX [0-9]{5}`](demo:ZIPCode)' provides a zip code annotation.\n-->\n\nshow me information for [Callsign](hamdb:CallSignInfo) \"___\"\nshow me the [qth](hamdb:QTH) of this callsign\n\n\n\n\n\n\n"
+  - name: 'hamdb:Operator'
+    ontology:
+      subClassOf:
+        - ':Attribute'
+        - ':StrAttribute'
+patterns: "<!--\n\tEnter your NL patterns in this markdown panel. \n\tA pattern consists of natural language text annotated with concepts tags. \n\tFor example,\n\t 'tell me a [joke](demo:Joke)' annotates the demo:Joke concept appropriately\n\t 'show me the [weather](demo:Weather)' annotates the demo:Weather concept appropriately. \n\tWe even support regular expression annotations.\n\t For example, '[`REGEX [0-9]{5}`](demo:ZIPCode)' provides a zip code annotation.\n-->\n\nshow me information for [Callsign](hamdb:CallSignInfo) \"___\"\nshow me the [qth](hamdb:QTH) of this callsign\nshow me the [grid](hamdb:Grid) of this callsign\nshow me the [operator](hamdb:Operator) of this callsign\n\n\n\n\n\n"
 ontobot: ''
 actions:
   - name: 'hamdb:showCallsignInfo'
     signature: 'hamdb:CallSignInfo (data :UserString) -> data hamdb:CallSignInfo'
     kind: 'nodejs:10'
-    code: "const eba = require(\"eba\");\nconst hamdb = require('./hamdb.js');\nconst _ = require('lodash');\n\n\nmodule.exports.main = async function(params) {\n\tlet p = new eba.Params(params)\n\tlet callsign = await p.get(\":UserString\");\n\tconsole.log(\"search for: \" + callsign);\n\t\n\tlet HamDBInformation = await hamdb.searchHamdb(callsign);\n\tconsole.log(\"Status of call is \" , HamDBInformation.hamdb.messages.status);\n\tconsole.log(\"Result of hamDb search is \" + JSON.stringify(HamDBInformation));\n\tlet myCoords =  {\n    center: {\n      lat: HamDBInformation.hamdb.callsign.lat,\n      lng: HamDBInformation.hamdb.callsign.lon\n    },\n    zoom: 11\n  };\n  \n\treturn new eba.Result()\n          .setData('hamdb:CallSignInfo', {\n            data: HamDBInformation,\n            coords:  myCoords,\n            text: callsign\n          })\n}"
+    code: "const eba = require(\"eba\");\nconst hamdb = require('./hamdb.js');\nconst _ = require('lodash');\n\n\nmodule.exports.main = async function(params) {\n\tlet p = new eba.Params(params)\n\tlet callsign = await p.get(\":UserString\");\n\tconsole.log(\"search for: \" + callsign);\n\t\n\tlet HamDBInformation = await hamdb.searchHamdb(callsign);\n\tconsole.log(\"Status of call is \" , HamDBInformation.hamdb.messages.status);\n\tconsole.log(\"Result of hamDb search is \" + JSON.stringify(HamDBInformation));\n\tlet myCoords =  {\n    center: {\n      lat: HamDBInformation.hamdb.callsign.lat,\n      lng: HamDBInformation.hamdb.callsign.lon\n    },\n    zoom: 11\n  };\n  \n  const meta = new eba.NLToken(\"hamdb:CallSignInfo\")\n                .addProperty(\":WithName\", new eba.NLToken('nlg:PlainText', callsign));\n\treturn new eba.Result()\n          .setData('hamdb:CallSignInfo', {\n            data: HamDBInformation,\n            coords:  myCoords,\n            grid: HamDBInformation.hamdb.callsign.grid,\n            operator: HamDBInformation.hamdb.callsign.name,\n            text: callsign\n          })\n          .setMeta('hamdb:CallSignInfo', meta)\n}"
 statics:
   - name: hamdbUI.jsx
     mime: text/jsx
