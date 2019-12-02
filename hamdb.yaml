@@ -47,19 +47,12 @@ statics:
         constructor (props) {
           super(props);
           var randomvalue= uuidv4();
-          console.log("Random value is: " , randomvalue);
           this.state = { 
             uniqmap: randomvalue, 
           }
         }
 
-        componentWillUnmount(){
-          console.log("Enter componentWillUnmount");
-        }
-
         componentDidMount() {
-          console.log("Enter componentDidMount");
-          console.log("componentDidMount: ", this.state.uniqmap);
           var map =  L.map(this.state.uniqmap, {
             center: [this.props.data.data.hamdb.callsign.lat, 
                     this.props.data.data.hamdb.callsign.lon],
@@ -70,24 +63,67 @@ statics:
               }),
               ]
             });
-          console.log("Map is in container: " , map.getContainer());
             L.marker([this.props.data.data.hamdb.callsign.lat, 
                       this.props.data.data.hamdb.callsign.lon])
             .addTo(map)
             .bindPopup(this.props.data.data.hamdb.callsign.call)
             .openPopup();
         }
+
         render() {
-          console.log("render uniq value= " , this.state.uniqmap);
           return (
             <div className="drumherum">
               <h1>HamDB</h1>
-              <OMInformation omData={this.props.data.data.hamdb}></OMInformation>
+              <OMInformation omData={this.props.data.data.  hamdb}></OMInformation>
               <div id={this.state.uniqmap} style={{height : '270px'}}>
               </div>
             </div>)
         }
       }
+
+
+      export class hamdb_CallSignInfoContent extends React.Component {
+        constructor (props) {
+          super(props);
+          var randomvalue= uuidv4();
+          this.state = { 
+            uniqmap: randomvalue, 
+          }
+        }
+
+        componentDidMount() {
+          var map =  L.map(this.state.uniqmap, {
+            center: [this.props.data.data.hamdb.callsign.lat, 
+                    this.props.data.data.hamdb.callsign.lon],
+            zoom: 11,
+            layers: [
+              L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+              }),
+              ]
+            });
+            L.marker([this.props.data.data.hamdb.callsign.lat, 
+                      this.props.data.data.hamdb.callsign.lon])
+            .addTo(map)
+            .bindPopup(this.props.data.data.hamdb.callsign.call)
+            .openPopup();
+        }
+
+        render() {
+          return (
+            <div className="contentContainer">
+              <div className="leftContainer"> 
+                <h1>HamDB Information</h1>
+              </div>
+              <div className="rightContainer">
+                <OMInformation omData={this.props.data.data.hamdb}></OMInformation>
+              </div>
+              <div id={this.state.uniqmap} style={{height : '400px'}}>
+              </div>
+            </div>)
+        }
+      }
+
 
       export class OMInformation extends React.Component {
         render() {
@@ -99,6 +135,7 @@ statics:
           return (
             <div>
               <table>
+              <tbody>
               <tr>
                 <td>Callsign</td>
                 <td>{this.props.omData.callsign.call}</td>
@@ -111,6 +148,7 @@ statics:
                 <td>QTH location</td>
                 <td>{maidenhead}</td>
               </tr>
+              </tbody>
               </table>
             </div>
             )
@@ -136,6 +174,7 @@ statics:
         }
       }
 
+
       #map {
         height: 270px;
       }
@@ -143,6 +182,26 @@ statics:
 
       #myMap {
         height: 270px;
+      }
+
+
+      .contentContainer {
+          width: 85%;
+          height: 530px;
+          background: white;
+          margin: auto;
+          padding: 10px;
+      }
+
+      .leftContainer {
+          width: 50%;
+          height: 100px;
+          float: left;
+      }
+
+      .rightContainer {
+          margin-left: 50%;
+          height: 100px;
       }
 
 
