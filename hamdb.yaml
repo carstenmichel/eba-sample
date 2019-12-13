@@ -33,7 +33,6 @@ concepts:
     attributes:
       'hamdb:Operator': operator
       'hamdb:Grid': grid
-      'hamdb:QTH': coords.zoom
     notes: cs
   - name: ':Number'
   - name: ':StrAttribute'
@@ -42,31 +41,27 @@ concepts:
       subClassOf:
         - ':Attribute'
         - ':StrAttribute'
-patterns: "<!--\n\tEnter your NL patterns in this markdown panel. \n\tA pattern consists of natural language text annotated with concepts tags. \n\tFor example,\n\t 'tell me a [joke](demo:Joke)' annotates the demo:Joke concept appropriately\n\t 'show me the [weather](demo:Weather)' annotates the demo:Weather concept appropriately. \n\tWe even support regular expression annotations.\n\t For example, '[`REGEX [0-9]{5}`](demo:ZIPCode)' provides a zip code annotation.\n-->\n\nshow me information for [Callsign](hamdb:CallSignInfo) \"___\"\nshow me the [qth](hamdb:QTH) of this callsign\nshow me the [grid](hamdb:Grid) of this callsign\nshow me the [operator](hamdb:Operator) of this callsign\n\n\n\n\n\n"
+patterns: "<!--\n\tEnter your NL patterns in this markdown panel. \n\tA pattern consists of natural language text annotated with concepts tags. \n\tFor example,\n\t 'tell me a [joke](demo:Joke)' annotates the demo:Joke concept appropriately\n\t 'show me the [weather](demo:Weather)' annotates the demo:Weather concept appropriately. \n\tWe even support regular expression annotations.\n\t For example, '[`REGEX [0-9]{5}`](demo:ZIPCode)' provides a zip code annotation.\n-->\n\nshow me information for [Callsign](hamdb:CallSignInfo) \"___\"\nshow me the [grid](hamdb:Grid) of this callsign\nshow me the [operator](hamdb:Operator) of this callsign\n\n\n\n\n\n"
 ontobot: ''
 actions:
   - name: 'hamdb:showCallsignInfo'
     signature: 'hamdb:CallSignInfo (data :UserString) -> data hamdb:CallSignInfo'
     kind: 'nodejs:10'
-    code: "const eba = require(\"eba\");\nconst hamdb = require('./hamdb.js');\nconst _ = require('lodash');\n\n\nmodule.exports.main = async function(params) {\n\tlet p = new eba.Params(params)\n\tlet callsign = await p.get(\":UserString\");\n\tconsole.log(\"search for: \" + callsign);\n\t\n\tlet HamDBInformation = await hamdb.searchHamdb(callsign);\n\tconsole.log(\"Status of call is \" , HamDBInformation.hamdb.messages.status);\n\tconsole.log(\"Result of hamDb search is \" + JSON.stringify(HamDBInformation));\n\tlet myCoords =  {\n    center: {\n      lat: HamDBInformation.hamdb.callsign.lat,\n      lng: HamDBInformation.hamdb.callsign.lon\n    },\n    zoom: 11\n  };\n  \n  const meta = new eba.NLToken(\"hamdb:CallSignInfo\")\n                .addProperty(\":WithName\", new eba.NLToken('nlg:PlainText', callsign));\n\treturn new eba.Result()\n          .setData('hamdb:CallSignInfo', {\n            data: HamDBInformation,\n            coords:  myCoords,\n            grid: HamDBInformation.hamdb.callsign.grid,\n            operator: HamDBInformation.hamdb.callsign.name,\n            text: callsign\n          })\n          .setMeta('hamdb:CallSignInfo', meta)\n}"
+    code: "const eba = require(\"eba\");\nconst hamdb = require('./hamdb.js');\nconst _ = require('lodash');\n\n\nmodule.exports.main = async function(params) {\n\tlet p = new eba.Params(params)\n\tlet callsign = await p.get(\":UserString\");\n\tlet HamDBInformation = await hamdb.searchHamdb(callsign);\n  const meta = new eba.NLToken(\"hamdb:CallSignInfo\")\n    .addProperty(\":WithName\", new eba.NLToken('nlg:PlainText', callsign));\n\treturn new eba.Result()\n    .setData('hamdb:CallSignInfo', {\n      data: HamDBInformation,\n      grid: HamDBInformation.hamdb.callsign.grid,\n      operator: HamDBInformation.hamdb.callsign.name,\n      text: callsign\n    })\n    .setMeta('hamdb:CallSignInfo', meta)\n}"
 statics:
   - name: hamdbUI.jsx
     mime: text/jsx
     text: |-
       import 'leaflet.maidenhead/src/maidenhead.js';
-      import uuidv4 from 'uuid/v4';
 
       export class hamdb_CallSignInfoData extends React.Component {
         constructor (props) {
           super(props);
-          var randomvalue= uuidv4();
-          this.state = { 
-            uniqmap: randomvalue, 
-          }
+          this.mapReference=React.createRef();
         }
 
         componentDidMount() {
-          var map =  L.map(this.state.uniqmap, {
+          var map =  L.map(this.mapReference.current, {
             center: [this.props.data.data.hamdb.callsign.lat, 
                     this.props.data.data.hamdb.callsign.lon],
             zoom: 11,
@@ -87,9 +82,8 @@ statics:
           return (
             <div className="drumherum">
               <h1>HamDB</h1>
-              <OMInformation omData={this.props.data.data.  hamdb}></OMInformation>
-              <div id={this.state.uniqmap} style={{height : '270px'}}>
-              </div>
+              <OMInformation omData={this.props.data.data.hamdb}></OMInformation>
+              <div ref={this.mapReference} style={{height : '270px'}} />
             </div>)
         }
       }
@@ -98,14 +92,11 @@ statics:
       export class hamdb_CallSignInfoContent extends React.Component {
         constructor (props) {
           super(props);
-          var randomvalue= uuidv4();
-          this.state = { 
-            uniqmap: randomvalue, 
-          }
+          this.mapReference=React.createRef();
         }
 
         componentDidMount() {
-          var map =  L.map(this.state.uniqmap, {
+          var map =  L.map(this.mapReference.current, {
             center: [this.props.data.data.hamdb.callsign.lat, 
                     this.props.data.data.hamdb.callsign.lon],
             zoom: 11,
@@ -126,12 +117,12 @@ statics:
           return (
             <div className="contentContainer">
               <div className="leftContainer"> 
-                <h1>HamDB Information</h1>
+                <h1>HamDB</h1>
               </div>
               <div className="rightContainer">
                 <OMInformation omData={this.props.data.data.hamdb}></OMInformation>
               </div>
-              <div id={this.state.uniqmap} style={{height : '400px'}}>
+              <div ref={this.mapReference} style={{height : '400px'}}>
               </div>
             </div>)
         }
@@ -188,18 +179,11 @@ statics:
       }
 
 
-      #map {
-        height: 270px;
-      }
 
-
-      #myMap {
-        height: 270px;
-      }
 
 
       .contentContainer {
-          width: 85%;
+          width: 600px;
           height: 530px;
           background: white;
           margin: auto;
@@ -226,36 +210,26 @@ statics:
     text: |-
       {
         "dependencies": {
-          "leaflet.maidenhead": "^1.0.0",
-          "uuid": "^3.3.3"
+          "leaflet.maidenhead": "^1.0.0"
         }
       }
     frontend: true
     backend: true
   - name: hamdb.js
     mime: text/javascript
-    text: |+
+    text: |
       const requestpromise = require('request-promise-native');
       const _ = require('lodash');
       var async = require('async');
 
-
-      // now the promise async stuff
       module.exports.searchHamdb = async (callsign) => {
-        console.log("Starting Async job to load something");
         let result = await requestpromise.get({
           url: `http://api.hamdb.org/v1/${callsign}/json/eba`,
           json: true,
           timeout: 10000
         })
-        console.log("Result of hamdb is found");
         return result;
         }
-      // ending the async stuff
-
-
-
-
     backend: true
 experience: >-
   eyJjb250ZW50SWQiOiJjMzMwZmQ0YmNhNDdiMGExOTBmMjBiNDYzMDZkNTE4NjFjNjdmMjU1IiwiZmVlZGJhY2siOnt9LCJsYXN0VXBkYXRlZCI6MTU3MDYzMjYzMi42MDg2OTg0LCJwYXR0ZXJucyI6W10sInJld3JpdGVSdWxlcyI6W10sInNwZWxsaW5nTWFwIjp7InhrZDpYS0NEIjpbWyJ4a2NkIiwxXV19LCJ2ZXJzaW9uIjoiMS4xLjAiLCJyZXBvcnRzIjpbXX0=
